@@ -13,7 +13,7 @@ backbone为efficientnet-b7
 利用fit_flat_cos训练方式训练100轮   
 ## 测试结果
 由于训练标签从1开始，需要将原始标签值减1，最后预测结果加1    
-3通道验证集结果miou：52%，测试集结果miou：36%    
-3通道对原始数据中grass和bareland类进行随机crop扩充，最后验证集miou：56%，测试集miou：38。7%    
+3通道验证集结果miou：52%，测试集结果miou：37.5%    
+3通道对原始数据中grass和bareland类进行随机crop扩充，最后验证集miou：56%，测试集miou：38.7%    
 4通道验证集结果miou：53%，测试集结果miou：38.2%    
 4通道对原始图像中的5，6，8类进行随机crop扩充，验证集miou：，测试集miou
