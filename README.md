@@ -4,7 +4,7 @@
 3. 采用FastAI框架进行代码编写。
 4. 4个融合模型中包含一个3通道数据训练模型。
 5. 4个模型分别为，（1）4通道，数据增强，b7，不加注意力（2）4通道，原始数据，b7，不加注意力（3）3通道，数据增强，b7，不加注意力（4）4通道，数据增强，b8，注意力。
-6. 操作系统版本：Linux version 5.8.0-29-generic (buildd@lgw01-amd64-039) (gcc (Ubuntu 9.3.0-17ubuntu1/~20.04) 9.3.0, GNU ld (GNU Binutils for Ubuntu) 2.34) #31~20.04.1-Ubuntu SMP Fri Nov 6 16:10:42 UTC 2020
+6. 操作系统版本：Linux version 5.8.0-29-generic (buildd@lgw01-amd64-039) (gcc (Ubuntu 9.3.0-17ubuntu1\~20.04) 9.3.0, GNU ld (GNU Binutils for Ubuntu) 2.34) #31~20.04.1-Ubuntu SMP Fri Nov 6 16:10:42 UTC 2020
 7. python版本：3.7.9
 # 数据处理
 1. 对原始数据随机提出3000张作为测试集不参与训练。
