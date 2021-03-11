@@ -12,18 +12,19 @@ from loguru import logger
 import os
 import torch
 import segmentation_models_pytorch as smp
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+from fastai.vision.core import PILBase
+# PILBase._open_args = {'mode':'RGBA'}
 
-#torch.backends.cudnn.enabled = False
+path = Path("../user_data/tmp_data")
+model_parh = Path("../user_data/model_data")
 
-path = Path("../train")
 data_name = 'yaogan'
 default_lr = 1e-3
 default_epochs = 5
 
 train_params = {
     'train_size' : 256,
-    'train_bs' : 17,
+    'train_bs' : 10,
     'num_class' : 10,
     'one_cycle_policy' : False,
     'opt_func' : 'Adam',
@@ -32,25 +33,10 @@ train_params = {
     'wd' : 1e-2,
     'get_transform' : {'flip_vert': True},
     'fit_policy' : {
-       'stage-0' : {'freeze_to':0, 'lr':'%s' % default_lr, 'epochs':100, 'wd':None},
-       # 'stage-1' : {'freeze_to':2, 'lr':'slice(%s/10, %s)' % (default_lr, default_lr), 'epochs':10, 'wd':None},
-       # 'stage-2' : {'freeze_to':1, 'lr':'%s/2.' % default_lr, 'epochs':20, 'wd':None},
-       # 'stage-3' : {'freeze_to':1, 'lr':'slice(%s/2./10, %s/2.)' % (default_lr, default_lr), 'epochs':20, 'wd':None},
-       # 'stage-4' : {'freeze_to':0, 'lr':'%s' % default_lr, 'epochs':100, 'wd':None},
-       # 'stage-5' : {'freeze_to':0, 'lr':'slice(%s/3./10, %s/3.)' % (default_lr, default_lr), 'epochs':100, 'wd':None},
+       'stage-0' : {'freeze_to':0, 'lr':'%s' % default_lr, 'epochs':80, 'wd':None},
     },
     'custom_head' : None,
     'callbacks' : {
-        #'EarlyStoppingCallback':{
-        #    'monitor':'valid_loss',
-        #    'patience':15,
-        #},
-        #'ReduceLROnPlateau':{
-        #    'monitor':'valid_loss',
-        #    'patience':10,
-        #    'min_delta':0.1,
-        #    'min_lr':0,
-        #},
         'SaveModelCallback':{
             'monitor':'miou_image_seg',
             'fname':'unet++_aug_fc_yaogan_best_model',
@@ -111,26 +97,26 @@ if __name__ == '__main__':
         encoder_name="efficientnet-b7",
         encoder_weights="imagenet",
         in_channels=3,
-        classes=train_params.get('num_class'),
+        classes=train_params.get('num_class')
     )
-    # dls = HandelData(image_root=train_image_root, label_root=label_image_root, code_txt= code_txt_root)
-    fnames = get_image_files(path/'aug_jpg')
-    def label_func(x): return path/'aug_png'/f'{x.stem}.png'
+    
+    fnames = get_image_files(path/'aug_images')
+    def label_func(x): return path/'aug_labels'/f'{x.stem}.png'
     if train_params.get('get_transfrom') is not None:
         tfms = aug_transforms(**train_params.get('get_transform'))
     else:
         tfms = None
-    dls = SegmentationDataLoaders.from_label_func(path, fnames, label_func,item_tfms = Resize(train_params.get('train_size'), method=ResizeMethod.Squish), 
+    dls = SegmentationDataLoaders.from_label_func(path, fnames, label_func, valid_pct=0.2,item_tfms = Resize(train_params.get('train_size'), method=ResizeMethod.Squish), 
     batch_tfms = tfms, 
     codes=np.loadtxt(path/'codes.txt', dtype=str), bs=train_params.get('train_bs'))
-    
+
     learn = Learner(
         dls,
         model,
         loss_func = eval(train_params.get('loss_func')) if train_params.get('loss_func') else None,
         opt_func = partial(
             eval(train_params.get('opt_func')),
-            lr = default_lr,
+            lr=default_lr
         ),
         metrics = eval(train_params.get('metrics')) if train_params.get('metrics') else None,
         wd = train_params.get('wd'),
@@ -167,6 +153,4 @@ if __name__ == '__main__':
             learn.load(last_beat_mode_name)
             logger.info("beat mode %s" % last_beat_mode_name)
     
-    export_name = 'unet++_aug_fc_yaogan_latest_model.pkl'
-    learn.cbs = []
-    learn.export(export_name)
+    shutil.copy(path/'models'/'stage-0_unet++_aug_fc_yaogan_best_model.pth', model_parh/'stage-0_unet++_aug_fc_yaogan_best_model.pth')

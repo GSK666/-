@@ -1,19 +1,26 @@
-# 阿里天池2021全国数字生态创新大赛智能算法赛：生态资产智能分析
-## 遥感图像分割比赛
-网络主模型采用Unet++    
-backbone为efficientnet-b7   
-采用ImageNet预训练模型   
-## 数据说明
-分别采用3通道和4通道训练数据进行训练   
-3通道图像直接将4通道原始数据删除最后一维进行保存   
-由于fastai默认将训练数据变成RGB格式，但是原始训练数据为4通道数据，需要修改fastai源码参数，需要将fastai.vision.core下的PILBase中的参数修改为PILBase.\_open_args = {'mode':'RGBA'}   
-## 训练策略
-利用fastai编写   
-采用fastai自带默认数据增强方式，训练尺寸为256x256，优化器为Adam   
-利用fit_flat_cos训练方式训练100轮   
-## 测试结果
-由于训练标签从1开始，需要将原始标签值减1，最后预测结果加1    
-3通道验证集结果miou：52%，测试集结果miou：37.5%    
-3通道对原始数据中grass和bareland类进行随机crop扩充，最后验证集miou：56%，测试集miou：38.7%    
-4通道验证集结果miou：53%，测试集结果miou：38.2%    
-4通道对原始图像中的5，6，8类进行随机crop扩充，验证集miou：，测试集miou
+# 解决方案
+1. 基础模型采用UNet++网络模型，backbone采用ImageNet预训练好的timm-efficientNet-b8和efficientNet-b7，并在模型中添加scse注意力机制。
+2. 训练好4个模型进行结果融合。
+3. 采用FastAI框架进行代码编写。
+4. 4个融合模型中包含一个3通道数据训练模型。
+5. 4个模型分别为，（1）4通道，数据增强，b7，不加注意力（2）4通道，原始数据，b7，不加注意力（3）3通道，数据增强，b7，不加注意力（4）4通道，数据增强，b8，注意力。
+6. 操作系统版本：Linux version 5.8.0-29-generic (buildd@lgw01-amd64-039) (gcc (Ubuntu 9.3.0-17ubuntu1~20.04) 9.3.0, GNU ld (GNU Binutils for Ubuntu) 2.34) #31~20.04.1-Ubuntu SMP Fri Nov 6 16:10:42 UTC 2020
+7. python版本：3.7.9
+# 数据处理
+1. 对原始数据随机提出3000张作为测试集不参与训练。
+2. 对原始标签值进行减1。
+3. 对urban_area、countryside、construction、grass和bareland类别数据较少的数据进行随机crop扩充。
+4. 利用FastAI自带的数据增强库对训练数据进行增强。
+5. 划分20%作为验证集。
+# 训练策略
+1. 采用fit_flat_cos训练模式训练80轮。
+2. 采用混合精度训练。
+3. 采用Adam优化器。
+4. 在训练过程中保存miou最好成绩的模型。
+# 复现流程
+1. 执行train文件夹下的data.py文件，将数据和标签分开。
+2. 执行train文件夹下的crop_img.py文件，对数据进行crop扩充和划分。
+3. train.sh和test.sh中都加入了运行data.py和crop_img.py文件，只需要执行一次。
+4. 根据模型需要，修改train文件下的train.py文件，进行训练。
+5. 由于采用模型融合，需要得到每个模型中的每一类别的权重，首先记录下每个模型测试A榜的miou结果。
+6. 执行test文件夹下的test.py文件，每个模型在3000张测试集上进行测试，保存每个模型每个类别的miou结果，以A榜miou结果占0.6，测试结果占0.4进行miou结果融合，利用最终的miou结果进行模型融合，得到最终的测试结果，预测结果需加1。
